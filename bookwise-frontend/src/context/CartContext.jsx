@@ -12,6 +12,7 @@ import { STORAGE_KEYS } from '../utils/auth';
 
 const CartContext = createContext(null);
 
+
 const EMPTY_CART = [];
 
 function sanitiseCart(stored) {
