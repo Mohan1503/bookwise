@@ -6,6 +6,7 @@ from app.models.book_chunk import BookChunk, BookIndex
 from app.models.book_file import BookFile
 from app.models.bookmark import Bookmark
 from app.models.category import Category
+from app.models.highlight import Highlight
 from app.models.publisher import Publisher
 from app.models.reading_progress import ReadingProgress
 from app.models.role import Role, UserRole
@@ -22,6 +23,7 @@ __all__ = [
     "BookIndex",
     "Bookmark",
     "Category",
+    "Highlight",
     "Publisher",
     "ReadingProgress",
     "Role",

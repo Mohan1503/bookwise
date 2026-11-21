@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import threading
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 from uuid import UUID
 
@@ -21,6 +23,45 @@ logger = logging.getLogger(__name__)
 # books.cover_image_path values for covers kept in Filebase start with this.
 FILEBASE_PREFIX = "filebase:"
 COVER_MEDIA_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+
+
+class _BytesLRU:
+    """A small thread-safe least-recently-used cache of file bytes, capped by total size."""
+
+    def __init__(self, max_bytes: int):
+        self.max_bytes = max_bytes
+        self._items: OrderedDict[str, bytes] = OrderedDict()
+        self._size = 0
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> bytes | None:
+        with self._lock:
+            value = self._items.get(key)
+            if value is not None:
+                self._items.move_to_end(key)
+            return value
+
+    def put(self, key: str, value: bytes) -> None:
+        if len(value) > self.max_bytes:
+            return
+        with self._lock:
+            if key in self._items:
+                self._size -= len(self._items.pop(key))
+            self._items[key] = value
+            self._size += len(value)
+            while self._size > self.max_bytes:
+                _, evicted = self._items.popitem(last=False)
+                self._size -= len(evicted)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._items.clear()
+            self._size = 0
+
+
+# All 13 current books are 4.6 MB together; 48 MB keeps plenty without straining a
+# 512 MB server.
+_pdf_cache = _BytesLRU(48 * 1024 * 1024)
 
 
 def _filebase_cover_key(cover_path: str) -> str | None:
@@ -171,7 +212,13 @@ class FileService:
         if book_file.format.lower() != "pdf" or not book_file.is_active:
             raise StorageNotFoundError("An active PDF file was not found.")
         if book_file.storage_provider == "filebase":
-            return self._get_filebase_storage().download_pdf(book_file.storage_path)
+            # Filebase keys are never reused (each upload gets a new random key), so a
+            # cached copy can't go stale. Saves ~1-2 s per open and Filebase bandwidth.
+            cached = _pdf_cache.get(book_file.storage_path)
+            if cached is None:
+                cached = self._get_filebase_storage().download_pdf(book_file.storage_path)
+                _pdf_cache.put(book_file.storage_path, cached)
+            return cached
         if book_file.storage_provider == "local":
             return self.storage.read_file(book_file.storage_path)
         raise StorageError("Stored file uses an unsupported storage provider.")

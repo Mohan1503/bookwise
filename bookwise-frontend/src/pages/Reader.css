@@ -11,6 +11,8 @@
   --reader-hover: var(--indigo-softer);
   --reader-accent: var(--indigo);
   --reader-filter: none;
+  --reader-paper: #fffdf8;
+  --reader-paper-edge: #d9d1c1;
 
   position: fixed;
   inset: 0;
@@ -30,6 +32,8 @@
   --reader-hover: #eadbbd;
   --reader-accent: #8a5a1c;
   --reader-filter: sepia(0.35) contrast(0.96) brightness(0.98);
+  --reader-paper: #f6ecd6;
+  --reader-paper-edge: #cdb98f;
 }
 
 .reader--night {
@@ -41,6 +45,8 @@
   --reader-hover: #252b37;
   --reader-accent: #a5b4fc;
   --reader-filter: invert(0.88) hue-rotate(180deg) contrast(0.92);
+  --reader-paper: #26282d;
+  --reader-paper-edge: #3a3d44;
 }
 
 /* Bars ------------------------------------------------------------------- */
@@ -131,6 +137,19 @@
   border-radius: 12px;
 }
 
+.reader__layout {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  border: 1px solid var(--reader-line);
+  border-radius: 12px;
+}
+
+.reader__layout .reader__icon-btn {
+  width: 34px;
+  height: 34px;
+}
+
 .reader__zoom .reader__icon-btn {
   width: 34px;
   height: 34px;
@@ -173,7 +192,7 @@
   text-underline-offset: 3px;
 }
 
-/* Stage ---------------------------------------------------------------------- */
+/* Stage: an open book lying on a desk ---------------------------------------- */
 .reader__body {
   position: relative;
   display: flex;
@@ -183,37 +202,134 @@
 
 .reader__stage {
   position: relative;
+  display: flex;
   flex: 1;
   min-width: 0;
-  overflow: auto;
-  padding: 24px 16px 32px;
+  overflow: hidden;
+  padding: 28px 64px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.35), transparent 65%),
+    var(--reader-stage);
   overscroll-behavior: contain;
 }
 
-.reader__page {
+.reader__stage.is-zoomed {
+  overflow: auto;
+}
+
+.reader__desk {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   width: fit-content;
   min-width: 100%;
+  min-height: 100%;
+  margin: auto;
 }
 
-.reader__page canvas {
+.reader__book {
+  position: relative;
+  display: flex;
+  flex: none;
+  perspective: 2400px;
+  cursor: pointer;
+  user-select: none;
+  filter: drop-shadow(0 24px 28px rgba(40, 30, 15, 0.28)) drop-shadow(0 3px 6px rgba(40, 30, 15, 0.18));
+}
+
+.is-zoomed .reader__book {
+  cursor: default;
+}
+
+/* One page (sheet of paper) */
+.reader__sheet {
+  position: relative;
+  flex: none;
+  background: var(--reader-paper);
+  overflow: visible;
+}
+
+.reader__sheet canvas {
   display: block;
   max-width: none;
-  background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 18px 40px -18px rgba(0, 0, 0, 0.35);
   filter: var(--reader-filter);
 }
 
-.reader__page {
-  position: relative;
+.reader__sheet--left {
+  border-radius: 4px 1px 1px 4px;
+}
+
+.reader__sheet--right,
+.reader__sheet--single {
+  border-radius: 1px 4px 4px 1px;
+}
+
+/* Paper curving into the spine */
+.reader__sheet::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14%;
+  pointer-events: none;
+}
+
+.reader__sheet--left::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.04) 35%, transparent);
+}
+
+.reader__sheet--right::after,
+.reader__sheet--single::after {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.03) 35%, transparent);
+}
+
+.reader__sheet--single::after {
+  width: 6%;
+}
+
+/* Stacked page edges on the outer side, thicker where more of the book lies */
+.reader__sheet::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: calc(var(--edge, 0) * 1px);
+  background: repeating-linear-gradient(to right, var(--reader-paper-edge) 0 1px, var(--reader-paper) 1px 2px);
+  pointer-events: none;
+}
+
+.reader__sheet--left::before {
+  right: 100%;
+  border-radius: 3px 0 0 3px;
+}
+
+.reader__sheet--right::before,
+.reader__sheet--single::before {
+  left: 100%;
+  border-radius: 0 3px 3px 0;
+}
+
+.reader__sheet.is-blank {
+  background: linear-gradient(to left, var(--reader-paper-edge), var(--reader-paper) 12%);
+}
+
+.reader__spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(0, 0, 0, 0.18);
+  pointer-events: none;
 }
 
 .reader__page-loading {
   position: absolute;
-  top: 120px;
+  top: 40%;
   left: 50%;
   margin-left: -17px;
 }
@@ -225,6 +341,91 @@
   margin-top: 16px;
   color: var(--danger);
   font-size: 0.9rem;
+}
+
+/* The turning page --------------------------------------------------------------- */
+.reader__flip {
+  position: absolute;
+  top: 0;
+  z-index: 3;
+  transform-style: preserve-3d;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1);
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+.reader__flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.reader__flip-face--back {
+  transform: rotateY(180deg);
+}
+
+/* Shade the leaf as it lifts off the page */
+.reader__flip-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.18), transparent 40%, rgba(0, 0, 0, 0.12));
+  opacity: 0;
+  animation-name: reader-leaf-shade;
+  animation-duration: inherit;
+  animation-timing-function: ease-in-out;
+  pointer-events: none;
+}
+
+.reader__flip--spread-next {
+  left: 50%;
+  transform-origin: left center;
+  animation-name: reader-turn-next;
+}
+
+.reader__flip--spread-prev {
+  left: 0;
+  transform-origin: right center;
+  animation-name: reader-turn-prev;
+}
+
+.reader__flip--single-next {
+  left: 0;
+  transform-origin: left center;
+  animation-name: reader-lift-away;
+}
+
+.reader__flip--single-prev {
+  left: 0;
+  transform-origin: left center;
+  animation-name: reader-lay-down;
+}
+
+@keyframes reader-turn-next {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-180deg); }
+}
+
+@keyframes reader-turn-prev {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(180deg); }
+}
+
+@keyframes reader-lift-away {
+  from { transform: rotateY(0deg); opacity: 1; }
+  80% { opacity: 1; }
+  to { transform: rotateY(-100deg); opacity: 0; }
+}
+
+@keyframes reader-lay-down {
+  from { transform: rotateY(-100deg); opacity: 0; }
+  20% { opacity: 1; }
+  to { transform: rotateY(0deg); opacity: 1; }
+}
+
+@keyframes reader-leaf-shade {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 .reader__turn {
@@ -488,6 +689,7 @@
   }
 
   .reader__zoom,
+  .reader__layout,
   .reader__fullscreen {
     display: none;
   }
@@ -521,5 +723,334 @@
     inset: 0 auto 0 0;
     z-index: 3;
     box-shadow: var(--shadow-lg);
+  }
+}
+
+/* ==========================================================================
+   Selectable text, highlights and bookmarks
+   ========================================================================== */
+
+/* Invisible text laid over the page (rules from PDF.js's text layer) */
+.reader__text.textLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.reader__text.textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.reader__text.textLayer > :not(.markedContent),
+.reader__text.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.reader__text.textLayer .markedContent {
+  display: contents;
+}
+
+.reader__text.textLayer ::selection {
+  background: rgba(61, 78, 216, 0.28);
+  color: transparent;
+}
+
+.reader__text.textLayer br::selection {
+  background: transparent;
+}
+
+.reader__text.textLayer .endOfContent {
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  display: block;
+  cursor: default;
+  user-select: none;
+}
+
+.reader__text.textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+/* Highlighter-pen marks under the text */
+.reader__marks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.reader__mark {
+  position: absolute;
+  border-radius: 2px;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+.reader__mark.has-note {
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.reader__mark--yellow { background: #ffe14d; }
+.reader__mark--green { background: #8fe28f; }
+.reader__mark--blue { background: #8ec5ff; }
+.reader__mark--pink { background: #ff9ccc; }
+
+/* The night theme inverts the page, so marks glow instead of darkening */
+.reader--night .reader__mark {
+  mix-blend-mode: screen;
+  opacity: 0.35;
+}
+
+/* Bookmark ribbon hanging from the top of the page */
+.reader__ribbon {
+  position: absolute;
+  top: -4px;
+  right: 22px;
+  z-index: 3;
+  width: 18px;
+  height: 46px;
+  background: linear-gradient(to right, #b3262e, #d8343d 55%, #b3262e);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+
+.reader__sheet--left .reader__ribbon {
+  right: auto;
+  left: 22px;
+}
+
+.reader__bookmark-btn.is-active {
+  color: #c62f37;
+}
+
+/* Bookmarks & highlights panel (shares the contents panel's look) */
+.reader__notes-empty {
+  padding: 12px 14px;
+  color: var(--reader-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.reader__notes-title {
+  margin: 14px 14px 4px;
+  color: var(--reader-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reader__note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.reader__note-row .reader__contents-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader__note-row .reader__contents-item span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader__note {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 4px;
+  border-left: 4px solid var(--note-color, #ffe14d);
+}
+
+.reader__note--yellow { --note-color: #f2cf2c; }
+.reader__note--green { --note-color: #5cc35c; }
+.reader__note--blue { --note-color: #5aa8f5; }
+.reader__note--pink { --note-color: #f070ad; }
+
+.reader__note .reader__note-text {
+  display: -webkit-box !important;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  font-family: var(--font-serif);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.reader__note-comment {
+  color: var(--reader-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  text-align: left;
+}
+
+/* Floating menus */
+.reader__popover {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--reader-line);
+  border-radius: 12px;
+  background: var(--reader-bar);
+  color: var(--reader-text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  transform: translate(-50%, -100%);
+}
+
+.reader__popover.is-below {
+  transform: translate(-50%, 0);
+}
+
+.reader__swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reader__swatch {
+  width: 26px;
+  height: 26px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--transition);
+}
+
+.reader__swatch:hover {
+  transform: scale(1.12);
+}
+
+.reader__swatch.is-current {
+  border-color: var(--reader-text);
+}
+
+.reader__swatch--yellow { background: #ffe14d; }
+.reader__swatch--green { background: #8fe28f; }
+.reader__swatch--blue { background: #8ec5ff; }
+.reader__swatch--pink { background: #ff9ccc; }
+
+.reader__note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 240px;
+}
+
+.reader__note-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--reader-line);
+  border-radius: 8px;
+  background: var(--reader-paper);
+  color: var(--reader-text);
+  font: inherit;
+  font-size: 0.86rem;
+  resize: vertical;
+}
+
+.reader__note-form .btn {
+  align-self: flex-end;
+}
+
+/* ==========================================================================
+   Listen mode
+   ========================================================================== */
+.reader__listen {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--reader-line);
+  background: var(--reader-hover);
+  color: var(--reader-text);
+  font-size: 0.86rem;
+}
+
+.reader__listen-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--reader-accent);
+  color: var(--reader-bar);
+  cursor: pointer;
+}
+
+.reader__listen-status {
+  flex: 1;
+  min-width: 110px;
+  color: var(--reader-muted);
+  font-weight: 600;
+}
+
+.reader__listen-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--reader-muted);
+}
+
+.reader__listen-field select {
+  max-width: 220px;
+  padding: 5px 8px;
+  border: 1px solid var(--reader-line);
+  border-radius: 8px;
+  background: var(--reader-bar);
+  color: var(--reader-text);
+  font: inherit;
+}
+
+/* The sentence being read aloud */
+.reader__text.textLayer span.is-speaking {
+  border-radius: 2px;
+  background: rgba(61, 78, 216, 0.16);
+  box-shadow: 0 0 0 1px rgba(61, 78, 216, 0.12);
+}
+
+.reader--night .reader__text.textLayer span.is-speaking {
+  background: rgba(165, 180, 252, 0.22);
+}
+
+@media (max-width: 760px) {
+  .reader__listen {
+    padding: 8px 10px;
+  }
+
+  .reader__listen-voice {
+    display: none;
   }
 }

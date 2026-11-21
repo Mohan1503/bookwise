@@ -7,6 +7,7 @@ from app.routes.v1.admin.categories import router as admin_categories_router
 from app.routes.v1.admin.overview import router as admin_overview_router
 from app.routes.v1.admin.publishers import router as admin_publishers_router
 from app.routes.v1.ai_reader import router as ai_reader_router
+from app.routes.v1.annotations import router as annotations_router
 from app.routes.v1.auth import router as auth_router
 from app.routes.v1.authors import router as authors_router
 from app.routes.v1.books import router as books_router
@@ -31,4 +32,5 @@ api_router.include_router(auth_router)
 api_router.include_router(users_router)
 api_router.include_router(wishlist_router)
 api_router.include_router(reader_router)
+api_router.include_router(annotations_router)
 api_router.include_router(ai_reader_router)

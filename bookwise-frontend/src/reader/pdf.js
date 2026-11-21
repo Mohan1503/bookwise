@@ -2,7 +2,7 @@
  * PDF.js wrapper for the in-app reader. This module is only imported by the
  * lazily loaded Reader page, so PDF.js stays out of the main bundle.
  */
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import { getDocument, GlobalWorkerOptions, TextLayer } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -25,6 +25,22 @@ export function renderPage(page, canvas, cssWidth) {
     viewport,
     transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0],
   });
+}
+
+/**
+ * Lay the page's text, invisible, exactly over the drawn page so it can be selected
+ * (for highlights). Returns the text layer; call cancel() to stop it.
+ */
+export function renderTextLayer(page, container, cssWidth) {
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: cssWidth / base.width });
+  container.replaceChildren();
+  container.style.setProperty('--total-scale-factor', String(viewport.scale));
+  container.style.setProperty('--scale-round-x', '1px');
+  container.style.setProperty('--scale-round-y', '1px');
+  const layer = new TextLayer({ textContentSource: page.streamTextContent(), container, viewport });
+  layer.render().catch(() => {});
+  return layer;
 }
 
 /** Flatten the PDF's table of contents (two levels) into [{ title, depth, pageNumber }]. */

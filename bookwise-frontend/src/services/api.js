@@ -13,7 +13,30 @@ export function getAuthToken() {
     || window.sessionStorage.getItem('bookwise.token');
 }
 
+// Public catalogue data (books, categories, authors…) is the same for everyone, so GET
+// responses are shared for a minute: pages that ask for the same data at once share one
+// request, and going back to a page is instant. Per-user data is never cached here.
+const PUBLIC_CACHE_MS = 60_000;
+const PUBLIC_PATH = /^\/(books|categories|authors|publishers|ai\/books)(\/|\?|$)/;
+const publicCache = new Map();
+
 export async function apiRequest(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET') {
+    publicCache.clear(); // something changed: don't serve old catalogue data
+    return sendRequest(path, options);
+  }
+  if (!PUBLIC_PATH.test(path) || path.includes('/download')) return sendRequest(path, options);
+
+  const cached = publicCache.get(path);
+  if (cached && Date.now() - cached.time < PUBLIC_CACHE_MS) return cached.promise;
+  const promise = sendRequest(path, options);
+  publicCache.set(path, { time: Date.now(), promise });
+  promise.catch(() => publicCache.delete(path));
+  return promise;
+}
+
+async function sendRequest(path, options = {}) {
   const headers = new Headers(options.headers || {});
   const token = getAuthToken();
 
@@ -167,6 +190,42 @@ export function readableFile(book) {
 /** The signed-in reader's saved position in a book, or null if not started. */
 export function getReadingProgress(bookId) {
   return apiRequest(`/reader/progress/${encodeURIComponent(bookId)}`);
+}
+
+/** The signed-in reader's bookmarks and highlights in one book: { bookmarks, highlights }. */
+export function getBookAnnotations(bookId) {
+  return apiRequest(`/reader/books/${encodeURIComponent(bookId)}/annotations`);
+}
+
+/** Bookmark a page (saving the same page again just updates its note). */
+export function saveBookmark({ bookId, page, note = null }) {
+  return apiRequest('/reader/bookmarks', {
+    method: 'PUT',
+    body: JSON.stringify({ book_id: bookId, page_number: page, note }),
+  });
+}
+
+export function deleteBookmark(bookmarkId) {
+  return apiRequest(`/reader/bookmarks/${encodeURIComponent(bookmarkId)}`, { method: 'DELETE' });
+}
+
+/** rects: highlighted areas as fractions of the page, [{ x, y, w, h }] from 0 to 1. */
+export function createHighlight({ bookId, page, text, color, rects }) {
+  return apiRequest('/reader/highlights', {
+    method: 'POST',
+    body: JSON.stringify({ book_id: bookId, page_number: page, text, color, rects }),
+  });
+}
+
+export function updateHighlight(highlightId, changes) {
+  return apiRequest(`/reader/highlights/${encodeURIComponent(highlightId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(changes),
+  });
+}
+
+export function deleteHighlight(highlightId) {
+  return apiRequest(`/reader/highlights/${encodeURIComponent(highlightId)}`, { method: 'DELETE' });
 }
 
 export function saveReadingProgress({ bookId, page, totalPages }) {

@@ -30,3 +30,8 @@
   color: var(--muted);
   font-size: 0.95rem;
 }
+
+/* Placeholder while a page's code downloads (usually a blink, since pages are prefetched) */
+.page-loading {
+  min-height: 60vh;
+}

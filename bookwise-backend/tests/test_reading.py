@@ -36,7 +36,7 @@ def test_reading_a_pdf_requires_sign_in(admin, local_uploads):
     assert response.status_code == 200
     assert response.content == PDF_BYTES
     assert response.headers["content-type"] == "application/pdf"
-    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["cache-control"] == "private, max-age=31536000, immutable"
 
 
 def test_unpublished_books_cannot_be_read(admin, local_uploads):

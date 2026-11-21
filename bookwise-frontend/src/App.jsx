@@ -6,27 +6,55 @@ import { WishlistProvider } from './context/WishlistContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
-import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
-import Explore from './pages/Explore';
-import BookDetails from './pages/BookDetails';
-import Categories from './pages/Categories';
-import Wishlist from './pages/Wishlist';
-import Cart from './pages/Cart';
-import Profile from './pages/Profile';
-import AIReader from './pages/AIReader';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminBooks from './pages/admin/AdminBooks';
-import AdminBookEditor from './pages/admin/AdminBookEditor';
-import AdminEntityManager from './pages/admin/AdminEntityManager';
-import AdminSettings from './pages/admin/AdminSettings';
-import NotFound from './pages/NotFound';
 import './App.css';
 
-// The reader pulls in PDF.js, so it loads only when someone opens a book.
-const Reader = lazy(() => import('./pages/Reader'));
+// Pages other than Home and sign-in load when first visited, so the first page of the
+// site downloads far less code. The reader also pulls in PDF.js.
+const loaders = {
+  explore: () => import('./pages/Explore'),
+  bookDetails: () => import('./pages/BookDetails'),
+  categories: () => import('./pages/Categories'),
+  aiReader: () => import('./pages/AIReader'),
+  reader: () => import('./pages/Reader'),
+};
+const Explore = lazy(loaders.explore);
+const BookDetails = lazy(loaders.bookDetails);
+const Categories = lazy(loaders.categories);
+const AIReader = lazy(loaders.aiReader);
+const Reader = lazy(loaders.reader);
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Profile = lazy(() => import('./pages/Profile'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminBooks = lazy(() => import('./pages/admin/AdminBooks'));
+const AdminBookEditor = lazy(() => import('./pages/admin/AdminBookEditor'));
+const AdminEntityManager = lazy(() => import('./pages/admin/AdminEntityManager'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+
+// Once the first page is up and the browser is idle, fetch the most visited pages so
+// clicking them is still instant.
+if (typeof window !== 'undefined') {
+  const idle = window.requestIdleCallback ?? ((callback) => window.setTimeout(callback, 1500));
+  idle(() => Object.values(loaders).forEach((load) => load().catch(() => {})));
+}
+
+function PageFallback() {
+  return <div className="page-loading" role="status" aria-label="Loading page" />;
+}
+
+/** A lazily loaded page, with a quiet placeholder while its code downloads. */
+function page(Component, props) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <Component {...props} />
+    </Suspense>
+  );
+}
 
 /** The catalogue used to live at /home; keep old links and bookmarks working. */
 function LegacyCatalogueRedirect() {
@@ -70,16 +98,16 @@ export default function App() {
 
               {/* Bookstore and application pages */}
               <Route element={<MainLayout />}>
-                <Route path="/books" element={<Explore />} />
+                <Route path="/books" element={page(Explore)} />
                 <Route path="/home" element={<LegacyCatalogueRedirect />} />
-                <Route path="/books/:id" element={<BookDetails />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/ai-reader" element={<AIReader />} />
+                <Route path="/books/:id" element={page(BookDetails)} />
+                <Route path="/categories" element={page(Categories)} />
+                <Route path="/ai-reader" element={page(AIReader)} />
                 <Route
                   path="/wishlist"
                   element={
                     <ProtectedRoute>
-                      <Wishlist />
+                      {page(Wishlist)}
                     </ProtectedRoute>
                   }
                 />
@@ -87,7 +115,7 @@ export default function App() {
                   path="/cart"
                   element={
                     <ProtectedRoute>
-                      <Cart />
+                      {page(Cart)}
                     </ProtectedRoute>
                   }
                 />
@@ -95,23 +123,23 @@ export default function App() {
                   path="/profile"
                   element={
                     <ProtectedRoute>
-                      <Profile />
+                      {page(Profile)}
                     </ProtectedRoute>
                   }
                 />
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={page(NotFound)} />
               </Route>
 
               {/* Admin area - separate layout, no customer navbar/footer */}
-              <Route path="/admin" element={<ProtectedRoute requiredRole="superadmin"><AdminLayout /></ProtectedRoute>}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="books" element={<AdminBooks />} />
-                <Route path="books/new" element={<AdminBookEditor />} />
-                <Route path="books/:bookId" element={<AdminBookEditor />} />
-                <Route path="authors" element={<AdminEntityManager kind="authors" />} />
-                <Route path="categories" element={<AdminEntityManager kind="categories" />} />
-                <Route path="publishers" element={<AdminEntityManager kind="publishers" />} />
-                <Route path="settings" element={<AdminSettings />} />
+              <Route path="/admin" element={<ProtectedRoute requiredRole="superadmin">{page(AdminLayout)}</ProtectedRoute>}>
+                <Route index element={page(AdminDashboard)} />
+                <Route path="books" element={page(AdminBooks)} />
+                <Route path="books/new" element={page(AdminBookEditor)} />
+                <Route path="books/:bookId" element={page(AdminBookEditor)} />
+                <Route path="authors" element={page(AdminEntityManager, { kind: 'authors' })} />
+                <Route path="categories" element={page(AdminEntityManager, { kind: 'categories' })} />
+                <Route path="publishers" element={page(AdminEntityManager, { kind: 'publishers' })} />
+                <Route path="settings" element={page(AdminSettings)} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
             </Routes>

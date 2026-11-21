@@ -151,3 +151,46 @@ def test_move_refuses_a_file_that_doesnt_match_its_checksum(api_client, tmp_path
         assert len(report.failed) == 1 and "checksum" in report.failed[0]
         assert db.get(Book, book_id).book_files[0].storage_provider == "local"
         assert not s3.objects
+
+
+# --- speed: cached PDFs and compressed JSON ------------------------------------------
+
+def test_filebase_pdfs_are_downloaded_once_then_served_from_memory(monkeypatch):
+    s3 = FakeS3()
+    s3.objects[(BUCKET, "books/pdf/b/1.pdf")] = PDF_BYTES
+    calls = []
+    original = s3.get_object
+    s3.get_object = lambda **kw: calls.append(kw) or original(**kw)
+    file_service_module._pdf_cache.clear()
+    service = file_service_module.FileService(
+        db=None, storage=LocalFileStorage(base_dir=Path("unused")),
+        filebase_storage=FilebaseStorage(config=filebase_config(), client=s3),
+    )
+    book_file = BookFile(format="pdf", is_active=True, storage_provider="filebase", storage_path="books/pdf/b/1.pdf")
+    assert service.read_book_pdf(book_file) == PDF_BYTES
+    assert service.read_book_pdf(book_file) == PDF_BYTES
+    assert len(calls) == 1
+    file_service_module._pdf_cache.clear()
+
+
+def test_pdf_cache_stays_within_its_size_limit():
+    cache = file_service_module._BytesLRU(max_bytes=10)
+    cache.put("a", b"12345")
+    cache.put("b", b"12345")
+    cache.get("a")  # "a" is now most recently used
+    cache.put("c", b"12345")
+    assert cache.get("b") is None and cache.get("a") == b"12345" and cache.get("c") == b"12345"
+    cache.put("huge", b"x" * 11)
+    assert cache.get("huge") is None
+
+
+def test_json_responses_are_compressed(api_client):
+    client, test_session = api_client
+    with test_session() as db:
+        for n in range(30):
+            db.add(Book(title=f"Book {n}", slug=f"book-{n}", status="PUBLISHED", visibility="PUBLIC",
+                        description="A long description " * 10))
+        db.commit()
+    response = client.get(f"{API}/books?size=30", headers={"Accept-Encoding": "gzip"})
+    assert response.status_code == 200
+    assert response.headers.get("content-encoding") == "gzip"

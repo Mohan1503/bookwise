@@ -154,6 +154,9 @@ def download_book_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"inline; filename*=UTF-8''{quote(filename)}",
-            "Cache-Control": "private, no-store",
+            # A file id always means the same bytes (a new upload gets a new id), so the
+            # reader's own browser may keep it: reopening a book is then instant.
+            # "private" keeps it out of shared caches.
+            "Cache-Control": "private, max-age=31536000, immutable",
         },
     )
