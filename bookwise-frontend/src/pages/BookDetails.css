@@ -1,0 +1,145 @@
+.details__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 28px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color var(--transition);
+}
+
+.details__back:hover {
+  color: var(--indigo);
+}
+
+.details__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.details__media {
+  position: sticky;
+  top: 104px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  background: var(--surface);
+}
+
+.details__media .book-cover {
+  aspect-ratio: 3 / 4;
+}
+
+.details__title {
+  margin-top: 16px;
+  font-size: clamp(1.9rem, 1.4rem + 2vw, 2.8rem);
+}
+
+.details__author {
+  margin-top: 10px;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.details__rating {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.92rem;
+}
+
+.details__stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--warning);
+}
+
+.details__description {
+  margin-top: 26px;
+  font-size: 1.04rem;
+  line-height: 1.85;
+  color: var(--navy-soft);
+}
+
+.details__facts {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 18px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+}
+
+.details__facts dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-light);
+}
+
+.details__facts dd {
+  margin: 6px 0 0;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.details__buy {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.details__price {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.details__actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.details__note {
+  margin-top: 16px;
+  font-size: 0.82rem;
+  color: var(--muted-light);
+}
+
+.section--related {
+  margin-top: 32px;
+  background: var(--surface-muted);
+  border-block: 1px solid var(--border-soft);
+}
+
+@media (max-width: 900px) {
+  .details__layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .details__media {
+    position: static;
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
+  .details__actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

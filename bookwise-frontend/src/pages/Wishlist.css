@@ -1,0 +1,115 @@
+.page-head {
+  padding-block: 48px 28px;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(61, 78, 216, 0.09), transparent 46%),
+    linear-gradient(180deg, #fdfbf7 0%, var(--ivory) 100%);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.page-head__inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.page-head__title {
+  font-size: clamp(1.9rem, 1.4rem + 2vw, 2.7rem);
+}
+
+.page-head__subtitle {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.wishlist__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wishlist-item {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition:
+    box-shadow var(--transition),
+    border-color var(--transition);
+}
+
+.wishlist-item:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.wishlist-item__cover {
+  display: block;
+  width: 92px;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.wishlist-item__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.wishlist-item__title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.wishlist-item__title a:hover {
+  color: var(--indigo);
+}
+
+.wishlist-item__author {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.wishlist-item__price {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.wishlist-item__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .wishlist-item {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .wishlist-item__cover {
+    width: 76px;
+  }
+
+  .wishlist-item__actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+  }
+
+  .wishlist-item__actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

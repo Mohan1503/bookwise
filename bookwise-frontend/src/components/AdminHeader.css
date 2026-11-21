@@ -1,0 +1,130 @@
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+  padding: 12px 32px;
+  background: rgb(255 255 255 / 92%);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.admin-header__menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--navy);
+}
+
+.admin-header__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.admin-header__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 32vw);
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: var(--muted);
+  transition: border-color var(--transition), background-color var(--transition);
+}
+
+.admin-header__search:focus-within {
+  border-color: var(--indigo);
+  background: var(--surface);
+}
+
+.admin-header__search input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  outline: none;
+}
+
+.admin-header__profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-header__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--indigo-soft);
+  color: var(--indigo-deep);
+  font-weight: 700;
+}
+
+.admin-header__who {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.admin-header__who strong {
+  font-size: 0.9rem;
+}
+
+.admin-header__who small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 960px) {
+  .admin-header {
+    gap: 10px;
+    padding: 10px 16px;
+  }
+
+  .admin-header__menu {
+    display: inline-flex;
+  }
+
+  .admin-header__title {
+    font-size: 1.2rem;
+  }
+
+  .admin-header__who {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-header {
+    flex-wrap: wrap;
+  }
+
+  .admin-header__search {
+    order: 3;
+    width: 100%;
+  }
+}

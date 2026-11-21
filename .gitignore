@@ -1,0 +1,28 @@
+# Secrets: real keys live only in .env files (see bookwise-backend/.env.example)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+
+# Local data and generated files
+bookwise-backend/storage/
+bookwise-frontend/.smoke-out/
+*.zip
+*.log
+
+# Editor and local tool settings
+.claude/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
