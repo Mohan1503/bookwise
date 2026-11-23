@@ -14,6 +14,7 @@ from app.routes.v1.books import router as books_router
 from app.routes.v1.categories import router as categories_router
 from app.routes.v1.publishers import router as publishers_router
 from app.routes.v1.reader import router as reader_router
+from app.routes.v1.stories import router as stories_router
 from app.routes.v1.users import router as users_router
 from app.routes.v1.wishlist import router as wishlist_router
 
@@ -34,3 +35,4 @@ api_router.include_router(wishlist_router)
 api_router.include_router(reader_router)
 api_router.include_router(annotations_router)
 api_router.include_router(ai_reader_router)
+api_router.include_router(stories_router)

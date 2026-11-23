@@ -57,7 +57,7 @@ export default function BookCard({ book, onAdded }) {
         </h3>
 
         <div className="book-card__footer">
-          <span className="book-card__price">{formatPrice(book.price)}</span>
+          <span className="book-card__price">{book.price > 0 ? formatPrice(book.price) : 'Free'}</span>
 
           <div className="book-card__actions">
             <button
@@ -73,14 +73,18 @@ export default function BookCard({ book, onAdded }) {
               <Heart size={17} fill={saved ? 'currentColor' : 'none'} aria-hidden="true" />
             </button>
 
-            <button
-              type="button"
-              className="btn btn--primary btn--sm"
-              onClick={handleAddToCart}
-            >
-              <ShoppingBag size={15} aria-hidden="true" />
-              {inCart ? 'In cart' : 'Add'}
-            </button>
+            {book.price > 0 ? (
+              <button
+                type="button"
+                className="btn btn--primary btn--sm"
+                onClick={handleAddToCart}
+              >
+                <ShoppingBag size={15} aria-hidden="true" />
+                {inCart ? 'In cart' : 'Add'}
+              </button>
+            ) : (
+              <Link to={`/books/${book.id}`} className="btn btn--secondary btn--sm">Read free</Link>
+            )}
           </div>
         </div>
       </div>

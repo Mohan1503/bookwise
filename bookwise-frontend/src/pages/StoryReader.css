@@ -1,0 +1,622 @@
+/* Story reader: one story at a time, in a calm reading column. */
+.tale {
+  --tale-bg: #fbf6ea;
+  --tale-surface: #fffdf6;
+  --tale-ink: #2a2118;
+  --tale-soft: #6f6152;
+  --tale-line: #e8dcc2;
+  --tale-accent: #c2502e;
+  --tale-gold: #d99413;
+  --tale-highlight: #fbe3a6;
+  --tale-bar: rgba(251, 246, 234, 0.9);
+  --tale-reading-font: 'Literata', 'Iowan Old Style', Georgia, serif;
+  min-height: 100vh;
+  background: var(--tale-bg);
+  color: var(--tale-ink);
+  transition: background 220ms ease, color 220ms ease;
+}
+
+.tale--sepia {
+  --tale-bg: #f1e3c4;
+  --tale-surface: #f7ecd2;
+  --tale-ink: #3b2b1a;
+  --tale-soft: #75614a;
+  --tale-line: #dcc79e;
+  --tale-highlight: #f3cf7c;
+  --tale-bar: rgba(241, 227, 196, 0.92);
+}
+
+.tale--night {
+  --tale-bg: #15132a;
+  --tale-surface: #1e1b38;
+  --tale-ink: #e9e1cf;
+  --tale-soft: #a69fb8;
+  --tale-line: #322d55;
+  --tale-accent: #f0a35a;
+  --tale-gold: #f4b942;
+  --tale-highlight: rgba(244, 185, 66, 0.28);
+  --tale-bar: rgba(21, 19, 42, 0.9);
+  color-scheme: dark;
+}
+
+.tale--sans { --tale-reading-font: var(--font-sans); }
+
+/* --- Top bar and progress ---------------------------------------------------------- */
+.tale__progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: 3px;
+}
+
+.tale__progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--tale-gold), var(--tale-accent));
+  transform-origin: left;
+  transition: transform 120ms linear;
+}
+
+.tale__bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  height: 58px;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--tale-line);
+  background: var(--tale-bar);
+  backdrop-filter: blur(10px);
+}
+
+.tale__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--tale-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tale__back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tale__back:hover { color: var(--tale-accent); }
+
+.tale__count {
+  color: var(--tale-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.tale__tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.tale__tool {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tale-soft);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.tale__tool:hover:not(:disabled) {
+  background: var(--tale-surface);
+  color: var(--tale-ink);
+}
+
+.tale__tool.is-active {
+  border-color: var(--tale-line);
+  background: var(--tale-surface);
+  color: var(--tale-accent);
+}
+
+.tale__tool:disabled { opacity: 0.4; cursor: default; }
+
+.tale button:focus-visible,
+.tale a:focus-visible,
+.tale select:focus-visible,
+.tale input:focus-visible {
+  outline: 3px solid var(--tale-gold);
+  outline-offset: 2px;
+}
+
+/* --- Panels -------------------------------------------------------------------------- */
+.tale__panel {
+  position: fixed;
+  z-index: 35;
+  border: 1px solid var(--tale-line);
+  background: var(--tale-surface);
+  box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.45);
+}
+
+.tale__panel--text {
+  top: 66px;
+  right: 1rem;
+  display: grid;
+  gap: 1rem;
+  width: min(320px, calc(100vw - 2rem));
+  padding: 1.1rem;
+  border-radius: 14px;
+}
+
+.tale__setting {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tale__setting > span {
+  color: var(--tale-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tale__stepper {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  border: 1px solid var(--tale-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tale__stepper button {
+  height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--tale-ink);
+  cursor: pointer;
+}
+
+.tale__stepper button:disabled { opacity: 0.35; cursor: default; }
+.tale__stepper output { text-align: center; font-weight: 600; }
+
+.tale__choices {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.4rem;
+}
+
+.tale__choice,
+.tale__swatch {
+  padding: 0.55rem 0.4rem;
+  border: 1.5px solid var(--tale-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tale-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tale__choice--serif { font-family: 'Literata', Georgia, serif; }
+.tale__choice--sans { font-family: var(--font-sans); }
+.tale__swatch--paper { background: #fbf6ea; color: #2a2118; }
+.tale__swatch--sepia { background: #f1e3c4; color: #3b2b1a; }
+.tale__swatch--night { background: #15132a; color: #e9e1cf; }
+
+.tale__choice.is-active,
+.tale__swatch.is-active {
+  border-color: var(--tale-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tale-accent) 25%, transparent);
+}
+
+.tale__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 34;
+  border: 0;
+  background: rgba(10, 8, 25, 0.35);
+  cursor: default;
+}
+
+.tale__panel--contents {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(380px, 88vw);
+  overflow-y: auto;
+  border-width: 0 1px 0 0;
+  animation: tale-slide 200ms ease-out;
+}
+
+@keyframes tale-slide {
+  from { transform: translateX(-24px); opacity: 0; }
+}
+
+.tale__panel-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--tale-line);
+  background: var(--tale-surface);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+}
+
+.tale__panel--contents ol {
+  margin: 0;
+  padding: 0.5rem;
+  list-style: none;
+}
+
+.tale__panel-note {
+  padding: 1rem 1.2rem;
+  color: var(--tale-soft);
+}
+
+.tale__toc-item {
+  display: grid;
+  grid-template-columns: 1.9rem 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  color: var(--tale-ink);
+  text-decoration: none;
+  font-size: 0.93rem;
+  line-height: 1.35;
+}
+
+.tale__toc-item:hover { background: var(--tale-bg); }
+
+.tale__toc-item.is-current {
+  background: color-mix(in srgb, var(--tale-gold) 16%, transparent);
+  font-weight: 600;
+}
+
+.tale__toc-number {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--tale-line);
+  border-radius: 50%;
+  color: var(--tale-accent);
+  font-size: 0.78rem;
+}
+
+.tale__toc-time {
+  color: var(--tale-soft);
+  font-size: 0.76rem;
+}
+
+/* --- The story ------------------------------------------------------------------------ */
+.tale__page {
+  padding: 3.2rem 1.25rem 9rem;
+}
+
+.tale__story {
+  max-width: 36em;
+  margin: 0 auto;
+  font-family: var(--tale-reading-font);
+  font-size: var(--tale-size, 19px);
+}
+
+.tale__head {
+  text-align: center;
+  margin-bottom: 2.2em;
+}
+
+.tale__kicker {
+  margin: 0;
+  color: var(--tale-accent);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tale__title {
+  margin: 0.55em 0 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 2.2em, 3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.tale__meta {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0.9em 0 0;
+  color: var(--tale-soft);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
+.tale__read {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--success);
+}
+
+.tale--night .tale__read { color: #7fd1a7; }
+
+.tale__ornament {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.4em auto 0;
+  max-width: 14em;
+  color: var(--tale-gold);
+  font-size: 1.3em;
+}
+
+.tale__ornament::before,
+.tale__ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tale-line));
+}
+
+.tale__ornament::after { background: linear-gradient(90deg, var(--tale-line), transparent); }
+
+.tale__text p {
+  margin: 0 0 1.05em;
+  line-height: 1.78;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+
+/* A storybook drop cap on the first paragraph. */
+.tale__text > p:not([class]):first-of-type::first-letter {
+  float: left;
+  margin: 0.08em 0.12em 0 0;
+  color: var(--tale-accent);
+  font-family: var(--font-serif);
+  font-size: 3.4em;
+  font-weight: 600;
+  line-height: 0.82;
+}
+
+.tale__subhead {
+  margin: 1.8em 0 0.9em;
+  color: var(--tale-accent);
+  font-family: var(--font-serif);
+  font-size: 1.05em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.tale__verse {
+  margin: 1.3em auto 1.5em !important;
+  padding-left: 1.4em;
+  border-left: 2px solid var(--tale-line);
+  font-style: italic;
+  line-height: 1.7 !important;
+}
+
+.tale__verse-line { display: block; }
+
+.tale__break {
+  margin: 1.8em 0 !important;
+  color: var(--tale-gold);
+  letter-spacing: 0.6em;
+  text-align: center;
+}
+
+/* The sentence being read aloud. */
+.tale__story [data-s] {
+  border-radius: 4px;
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+.tale--listening .tale__story [data-s] { cursor: pointer; }
+.tale--listening .tale__story [data-s]:hover { background: color-mix(in srgb, var(--tale-highlight) 45%, transparent); }
+
+.tale__story .is-speaking {
+  background: var(--tale-highlight);
+  box-shadow: 0 0 0 3px var(--tale-highlight);
+}
+
+.tale__end {
+  margin: 2.6em 0 2.2em;
+  color: var(--tale-soft);
+  font-family: var(--font-serif);
+  font-size: 0.95em;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.tale__end span { color: var(--tale-gold); margin: 0 0.5em; }
+
+.tale__next {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  font-family: var(--font-sans);
+}
+
+.tale__nav {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--tale-line);
+  border-radius: 14px;
+  background: var(--tale-surface);
+  color: var(--tale-ink);
+  text-decoration: none;
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.tale__nav:hover {
+  border-color: var(--tale-gold);
+  transform: translateY(-2px);
+}
+
+.tale__nav--next { text-align: right; }
+
+.tale__nav-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--tale-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tale__nav--next .tale__nav-label { justify-content: flex-end; }
+
+.tale__nav-title {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tale__pdf-link {
+  margin: 1.6rem 0 0;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.tale__pdf-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--tale-soft);
+}
+
+.tale__loading {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 36em;
+  margin: 0 auto;
+}
+
+.tale__skeleton {
+  height: 1.1rem;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--tale-line), var(--tale-surface), var(--tale-line));
+  background-size: 200% 100%;
+  animation: tale-shimmer 1.4s ease-in-out infinite;
+}
+
+.tale__skeleton--title { height: 2.4rem; width: 70%; margin: 0 auto 1.6rem; }
+.tale__skeleton--short { width: 60%; }
+
+@keyframes tale-shimmer {
+  to { background-position: -200% 0; }
+}
+
+.tale__missing {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 6rem 1.25rem;
+  text-align: center;
+}
+
+/* --- Listen bar ------------------------------------------------------------------------ */
+.tale__listen {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  width: min(760px, calc(100vw - 1.5rem));
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--tale-line);
+  border-radius: 18px;
+  background: var(--tale-surface);
+  box-shadow: 0 22px 46px -22px rgba(0, 0, 0, 0.5);
+  transform: translateX(-50%);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+}
+
+.tale__listen-play {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tale-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.tale__listen-status {
+  flex: 1;
+  min-width: 9rem;
+  color: var(--tale-soft);
+}
+
+.tale__listen-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--tale-soft);
+}
+
+.tale__listen-field select {
+  max-width: 12rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--tale-line);
+  border-radius: 8px;
+  background: var(--tale-bg);
+  color: var(--tale-ink);
+  font: inherit;
+}
+
+.tale__listen-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--tale-soft);
+  cursor: pointer;
+}
+
+.tale__listen-check input { accent-color: var(--tale-accent); }
+
+@media (max-width: 640px) {
+  .tale__bar { grid-template-columns: 1fr auto; }
+  .tale__count { display: none; }
+  .tale__page { padding-top: 2.2rem; }
+  .tale__next { grid-template-columns: 1fr; }
+  .tale__nav--next { text-align: left; }
+  .tale__nav--next .tale__nav-label { justify-content: flex-start; }
+  .tale__listen-voice { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tale *, .tale { transition: none !important; animation: none !important; }
+}

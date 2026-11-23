@@ -19,12 +19,16 @@ const loaders = {
   categories: () => import('./pages/Categories'),
   aiReader: () => import('./pages/AIReader'),
   reader: () => import('./pages/Reader'),
+  stories: () => import('./pages/Stories'),
 };
 const Explore = lazy(loaders.explore);
 const BookDetails = lazy(loaders.bookDetails);
 const Categories = lazy(loaders.categories);
 const AIReader = lazy(loaders.aiReader);
 const Reader = lazy(loaders.reader);
+const Stories = lazy(loaders.stories);
+const StoryCollection = lazy(() => import('./pages/StoryCollection'));
+const StoryReader = lazy(() => import('./pages/StoryReader'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -89,6 +93,18 @@ export default function App() {
                 }
               />
 
+              {/* Story reader: full screen, signed-in readers only */}
+              <Route
+                path="/stories/:bookId/:position"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div className="reader-loading" role="status">Opening the story…</div>}>
+                      <StoryReader />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Authentication (simplified layout) */}
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
@@ -103,6 +119,8 @@ export default function App() {
                 <Route path="/books/:id" element={page(BookDetails)} />
                 <Route path="/categories" element={page(Categories)} />
                 <Route path="/ai-reader" element={page(AIReader)} />
+                <Route path="/stories" element={page(Stories)} />
+                <Route path="/stories/:bookId" element={page(StoryCollection)} />
                 <Route
                   path="/wishlist"
                   element={

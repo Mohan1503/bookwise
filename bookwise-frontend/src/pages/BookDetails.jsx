@@ -140,18 +140,25 @@ export default function BookDetails() {
             </dl>
 
             <div className="details__buy">
-              <span className="details__price">{formatPrice(book.price)}</span>
+              <span className="details__price">{book.price > 0 ? formatPrice(book.price) : 'Free'}</span>
 
               <div className="details__actions">
                 <ReadButton book={book} />
-                <button
-                  type="button"
-                  className={`btn ${canRead ? 'btn--secondary' : 'btn--primary'} btn--lg`}
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingBag size={17} aria-hidden="true" />
-                  {inCart ? 'Add another copy' : 'Add to cart'}
-                </button>
+                {book.categories.includes('Stories') ? (
+                  <Link to={`/stories/${book.id}`} className="btn btn--secondary btn--lg">
+                    Read story by story
+                  </Link>
+                ) : null}
+                {book.price > 0 ? (
+                  <button
+                    type="button"
+                    className={`btn ${canRead ? 'btn--secondary' : 'btn--primary'} btn--lg`}
+                    onClick={handleAddToCart}
+                  >
+                    <ShoppingBag size={17} aria-hidden="true" />
+                    {inCart ? 'Add another copy' : 'Add to cart'}
+                  </button>
+                ) : null}
 
                 <button
                   type="button"

@@ -17,7 +17,7 @@ export function getAuthToken() {
 // responses are shared for a minute: pages that ask for the same data at once share one
 // request, and going back to a page is instant. Per-user data is never cached here.
 const PUBLIC_CACHE_MS = 60_000;
-const PUBLIC_PATH = /^\/(books|categories|authors|publishers|ai\/books)(\/|\?|$)/;
+const PUBLIC_PATH = /^\/(books|categories|authors|publishers|ai\/books)(\/|\?|$)|^\/stories(\/[^/]+)?$/;
 const publicCache = new Map();
 
 export async function apiRequest(path, options = {}) {
@@ -185,6 +185,30 @@ export function clearWishlist() {
 /** The PDF the in-app reader can open for a book, or null if it has none. */
 export function readableFile(book) {
   return (book?.files ?? []).find((file) => String(file.format).toLowerCase() === 'pdf') ?? null;
+}
+
+/* --------------------------------------------------------------------------
+   Stories (story books split into single stories)
+   -------------------------------------------------------------------------- */
+
+/** Story collections, their shelves and today's story. */
+export async function getStoriesHome() {
+  const data = await apiRequest('/stories');
+  return {
+    ...data,
+    collections: data.collections.map((item) => ({ ...item, book: normalizeBook(item.book) })),
+  };
+}
+
+/** A collection's contents: { book, shelf, reading_minutes, stories }. */
+export async function getStoryCollection(bookId) {
+  const data = await apiRequest(`/stories/${encodeURIComponent(bookId)}`);
+  return { ...data, book: normalizeBook(data.book) };
+}
+
+/** One story's text (signed-in readers). */
+export function getStory(bookId, position) {
+  return apiRequest(`/stories/${encodeURIComponent(bookId)}/${encodeURIComponent(position)}`);
 }
 
 /** The signed-in reader's saved position in a book, or null if not started. */

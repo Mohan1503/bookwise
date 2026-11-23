@@ -10,6 +10,7 @@ from app.models.highlight import Highlight
 from app.models.publisher import Publisher
 from app.models.reading_progress import ReadingProgress
 from app.models.role import Role, UserRole
+from app.models.story_section import StorySection
 from app.models.user import User
 from app.models.wishlist import Wishlist
 
@@ -28,6 +29,7 @@ __all__ = [
     "ReadingProgress",
     "Role",
     "User",
+    "StorySection",
     "UserRole",
     "Wishlist",
 ]

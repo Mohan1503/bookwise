@@ -10,6 +10,7 @@ export const primaryLinks = [
   { label: 'Home', to: '/', icon: 'Home' },
   { label: 'Explore Books', to: '/books', icon: 'Compass' },
   { label: 'Categories', to: '/categories', icon: 'LayoutGrid' },
+  { label: 'Stories', to: '/stories', icon: 'Sparkle' },
   { label: 'AI Reader', to: '/ai-reader', icon: 'Sparkles' },
 ];
 

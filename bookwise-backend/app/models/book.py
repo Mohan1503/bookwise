@@ -47,6 +47,9 @@ class Book(Base):
     bookmarks: Mapped[list["Bookmark"]] = relationship(back_populates="book", cascade="all, delete-orphan", passive_deletes=True)
     wishlists: Mapped[list["Wishlist"]] = relationship(back_populates="book", cascade="all, delete-orphan", passive_deletes=True)
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="book", passive_deletes=True)
+    story_sections: Mapped[list["StorySection"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan", passive_deletes=True, order_by="StorySection.position"
+    )
 
 
 class BookAuthor(Base):

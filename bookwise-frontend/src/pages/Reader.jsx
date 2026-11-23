@@ -41,7 +41,7 @@ import {
   updateHighlight,
 } from '../services/api';
 import { openPdf, readOutline, renderPage, renderTextLayer } from '../reader/pdf';
-import { LISTEN_RATES, speechSupported, useListen, useVoices } from '../reader/useListen';
+import { LISTEN_RATES, pageSentences, speechSupported, useListen, useVoices } from '../reader/useListen';
 import './Reader.css';
 
 const THEMES = [
@@ -503,9 +503,11 @@ function BookReader({ bookId, requestedPage }) {
 
   // --- Listen mode -----------------------------------------------------------------
   const shownPages = visible.filter(Boolean);
+  const bookTitle = book?.title;
+  const loadPageSentences = useCallback((number) => pageSentences(pdf, number, bookTitle), [pdf, bookTitle]);
   const listen = useListen({
-    pdf,
-    title: book?.title,
+    pageCount: pdf?.numPages ?? 0,
+    loadSentences: pdf ? loadPageSentences : null,
     visiblePages: shownPages,
     showPage: (number) => goTo(number, { animate: true }),
     rate: listenRate,

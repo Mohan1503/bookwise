@@ -12,6 +12,13 @@ const SENTENCE = /[^.!?…\n]+(?:[.!?…]+["'”’)\]]*|\n|$)\s*/g;
 // Heading lines ("Chapter III: …", "BOOK ONE") are read as sentences of their own.
 const UPPERCASE_ONLY = /^[^a-z]*[A-Z][^a-z]*$/;
 
+/** Split plain text into sentences for reading aloud. */
+export function splitSentences(text) {
+  return [...String(text).matchAll(SENTENCE)]
+    .map((match) => match[0].replace(/\s+/g, ' ').trim())
+    .filter((sentence) => /[\p{L}\p{N}]/u.test(sentence));
+}
+
 export function speechSupported() {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 }
@@ -67,19 +74,20 @@ export async function pageSentences(pdf, pageNumber, title) {
 }
 
 /**
- * Drives reading aloud. `visiblePages` are the pages on screen; `showPage(n)` brings a
- * page into view when reading moves past the visible ones.
+ * Drives reading aloud, a "page" at a time. `loadSentences(n)` resolves to page n's
+ * sentences ({ text, items }); `pageCount` is the last page. `visiblePages` are the pages
+ * on screen; `showPage(n)` brings a page into view when reading moves past them.
  */
-export function useListen({ pdf, title, visiblePages, showPage, rate, voiceURI }) {
+export function useListen({ pageCount, loadSentences, visiblePages, showPage, rate, voiceURI }) {
   const [status, setStatus] = useState('idle'); // idle | loading | playing | paused
   const [position, setPosition] = useState(null); // { page, sentence, items }
   const runRef = useRef(0); // bumps on every start/stop so stale callbacks do nothing
   const stateRef = useRef({ page: null, sentences: [], index: 0 });
-  const optionsRef = useRef({ rate, voiceURI, showPage, visiblePages, title });
+  const optionsRef = useRef({ rate, voiceURI, showPage, visiblePages, loadSentences, pageCount });
   const targetRef = useRef(null); // the page being read (or about to be)
 
   useEffect(() => {
-    optionsRef.current = { rate, voiceURI, showPage, visiblePages, title };
+    optionsRef.current = { rate, voiceURI, showPage, visiblePages, loadSentences, pageCount };
   });
 
   const stop = useCallback(() => {
@@ -99,14 +107,14 @@ export function useListen({ pdf, title, visiblePages, showPage, rate, voiceURI }
     let state = stateRef.current;
     if (state.page !== pageNumber) {
       setStatus('loading');
-      const sentences = await pageSentences(pdf, pageNumber, optionsRef.current.title);
+      const sentences = await optionsRef.current.loadSentences(pageNumber);
       if (runRef.current !== run) return;
       state = { page: pageNumber, sentences, index: 0 };
       stateRef.current = state;
     }
     if (sentenceIndex >= state.sentences.length) {
       // Page done (or empty): move on, bringing the next page into view.
-      if (pageNumber >= pdf.numPages) {
+      if (pageNumber >= optionsRef.current.pageCount) {
         stop();
         return;
       }
@@ -133,21 +141,21 @@ export function useListen({ pdf, title, visiblePages, showPage, rate, voiceURI }
       if (runRef.current === run && event.error !== 'interrupted' && event.error !== 'canceled') stop();
     };
     synth.speak(utterance);
-  }, [pdf, stop]);
+  }, [stop]);
   useEffect(() => {
     speakRef.current = speakFrom;
   }, [speakFrom]);
 
   /** Start reading at a page (or carry on from where it was paused). */
   const play = useCallback((pageNumber) => {
-    if (!pdf || !speechSupported()) return;
+    if (!optionsRef.current.loadSentences || !speechSupported()) return;
     window.speechSynthesis.cancel();
     runRef.current += 1;
     const run = runRef.current;
     const { page, index } = stateRef.current;
     const resume = status === 'paused' && page != null;
     speakFrom(resume ? page : pageNumber, resume ? index : 0, run);
-  }, [pdf, speakFrom, status]);
+  }, [speakFrom, status]);
 
   const pause = useCallback(() => {
     runRef.current += 1; // the current sentence is restarted on resume
@@ -172,6 +180,14 @@ export function useListen({ pdf, title, visiblePages, showPage, rate, voiceURI }
     speakFrom(pageNumber, 0, runRef.current);
   }, [speakFrom]);
 
+  /** Read from a given sentence of a page (e.g. the one the reader tapped). */
+  const startAt = useCallback((pageNumber, sentenceIndex) => {
+    if (!optionsRef.current.loadSentences || !speechSupported()) return;
+    window.speechSynthesis.cancel();
+    runRef.current += 1;
+    speakFrom(pageNumber, sentenceIndex, runRef.current);
+  }, [speakFrom]);
+
   const readingPage = useCallback(() => targetRef.current, []);
 
   useEffect(() => () => {
@@ -179,7 +195,7 @@ export function useListen({ pdf, title, visiblePages, showPage, rate, voiceURI }
     window.speechSynthesis?.cancel();
   }, []);
 
-  return { status, position, play, pause, stop, restartSentence, jumpTo, readingPage };
+  return { status, position, play, pause, stop, restartSentence, jumpTo, startAt, readingPage };
 }
 
 /** The browser's voices, preferring the page's language; they load asynchronously. */

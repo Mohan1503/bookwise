@@ -29,3 +29,6 @@ pypdf>=7,<8
 fastembed>=0.9,<1
 pgvector>=0.5,<1
 groq>=1.7,<2
+
+# Stories collection script (typesets story PDFs)
+fpdf2>=2.8,<3
